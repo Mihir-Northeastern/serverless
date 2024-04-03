@@ -5,7 +5,6 @@ const functions = require('@google-cloud/functions-framework');
 const DOMAIN = 'verifyemail.cloudwebappserver.com';
 const mg = mailgun({apiKey: '4b552d5c1cd188486cde6483ae5b49aa-f68a26c9-47f153c2', domain:'verifyemail.cloudwebappserver.com'});
 
-require('dotenv').config();
 
 const DB_NAME =process.env.DB_NAME;
 const DB_USER =process.env.DB_USER;
@@ -38,14 +37,14 @@ try {
 
 const generateVerificationUrl = (username) => {
     const encodedEmail = Buffer.from(username).toString('base64');
-    const baseUrl = 'http://cloudwebappserver.com.:3000';
+    const baseUrl = 'https://cloudwebappserver.com.:443/v1/user';
     return `${baseUrl}/verify?uid=${encodeURIComponent(encodedEmail)}`;
 };
 
 const sendVerificationEmail = async (username, verificationUrl, first_name, last_name) => {
     const data = {
         from: 'WebApi <mailgun@verifyemail.cloudwebappserver.com>',
-        to: 'makwanamihir5@gmail.com',
+        to: username,
         subject: 'Verify Your Email Address',
         text: `Thank you for registering with us. Please click the link to verify your email address: ${verificationUrl}`,
         html: `
@@ -90,8 +89,8 @@ exports.verifyEmail = async (event, context) => {
 
         await test();
 
-        await sequelize.query('INSERT INTO "Verifies" ("username", "uid", "createdAt", "updatedAt") VALUES (?, ?, ?, ?)', {
-            replacements: [username, verificationUid, new Date(), new Date()],
+        await sequelize.query('INSERT INTO "Verifies" ("username", "uid", "createdAt", "updatedAt", "verified") VALUES (?, ?, ?, ?, ?)', {
+            replacements: [username, verificationUid, new Date(), new Date(), false],
             type: sequelize.QueryTypes.INSERT
         }).catch(error => {
   console.error('Error inserting into Verifies table:', error);
@@ -113,5 +112,3 @@ exports.verifyEmail = async (event, context) => {
         };
     }
 };
-
-
